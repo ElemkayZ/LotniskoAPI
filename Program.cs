@@ -23,21 +23,11 @@ namespace LotniskoAPI
             builder.Services.AddDbContext<AppDbContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            builder.Services.AddIdentity<User, Role>()
-            .AddEntityFrameworkStores<AppDbContext>()
-            .AddDefaultTokenProviders();
-            
-            //builder.Services.AddScoped<IUserStore<User>, UserStore>();
-
             var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 
             builder.Logging.ClearProviders();
             builder.Logging.AddConsole();
 
-            //builder.Services.AddIdentity<User, Role>()
-            //.AddUserStore<UserStore>()
-            //.AddRoleStore<RoleStore>()
-            //.AddDefaultTokenProviders();
 
             
             builder.Services.AddControllers();
@@ -47,9 +37,11 @@ namespace LotniskoAPI
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
             })
                 .AddJwtBearer(options =>
                 {
+                    options.RequireHttpsMetadata = false; // for development
                     options.SaveToken = true;
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
@@ -63,6 +55,7 @@ namespace LotniskoAPI
                     };
                     options.Validate();
                 });
+
             //builder.Services.AddAuthorization(options =>
             //{
             //    options.AddPolicy("Admin", policy => policy.RequireRole("Admin"));
@@ -77,30 +70,26 @@ namespace LotniskoAPI
             {
                 options.SwaggerDoc("v1", new OpenApiInfo { Title = "Lotnisko", Version = "v1" });
 
-    //            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    //            {
-    //                Name = "Authorization",
-    //                Type = SecuritySchemeType.ApiKey,
-    //                Scheme = "Bearer",
-    //                BearerFormat = "JWT",
-    //                In = ParameterLocation.Header,
-    //                Description = "Enter 'Bearer' followed by your token."
-    //            });
+                var jwtSecurityScheme = new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                {
+                    BearerFormat = "JWT",
+                    Name = "Authorization",
+                    In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+                    Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+                    Scheme = JwtBearerDefaults.AuthenticationScheme,
+                    Description = "input token",
+                    Reference = new OpenApiReference
+                    {
+                        Id = JwtBearerDefaults.AuthenticationScheme,
+                        Type = ReferenceType.SecurityScheme
+                    }
+                };
+                options.AddSecurityDefinition("Bearer", jwtSecurityScheme);
 
-    //            options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    //{
-    //    {
-    //        new OpenApiSecurityScheme
-    //        {
-    //            Reference = new OpenApiReference
-    //            {
-    //                Type = ReferenceType.SecurityScheme,
-    //                Id = "Bearer"
-    //            }
-    //        },
-    //        new string[] { }
-    //    }
-    //});
+                options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+                    {jwtSecurityScheme, Array.Empty<string>() }
+    });
             });
 
             var app = builder.Build();

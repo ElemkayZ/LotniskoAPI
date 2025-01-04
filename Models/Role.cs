@@ -4,11 +4,11 @@ using Microsoft.AspNetCore.Identity;
 namespace LotniskoAPI.Models
 {
     [Table("Role")]
-    public class Role : IdentityRole<int>
+    public class Role
     {
         [Key]
-        new public int Id { get; set; }
-        override public string? Name { get; set; }
+         public int Id { get; set; }
+         public string? Name { get; set; }
 
         public ICollection<UserRoles>? UserRoles { get; set; }
 

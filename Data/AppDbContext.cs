@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 namespace LotniskoAPI.Data
 {
-    public class AppDbContext : IdentityDbContext<User,Role,int>
+    public class AppDbContext :DbContext
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -14,9 +14,9 @@ namespace LotniskoAPI.Data
         public DbSet<PlaneStaff> PlaneStaffs { get; set; }
         public DbSet<Ticket> Tickets { get; set; }
         public DbSet<TicketTransaction> TicketTransactions { get; set; }
-        new public DbSet<Role> Roles { get; set; }
+        public DbSet<Role> Roles { get; set; }
 
-        override public DbSet<User> Users { get; set; }
+        public DbSet<User> Users { get; set; }
         public DbSet<UserRoles> UserRoless { get; set; }
 
 

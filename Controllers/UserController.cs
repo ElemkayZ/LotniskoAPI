@@ -22,21 +22,19 @@ namespace LotniskoAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    //[Authorize]
     public class UserController : ControllerBase
     {
         private readonly AppDbContext _context;
-        private readonly UserManager<User> _userManager;
-        private readonly SignInManager<User> _signInManager;
         private readonly IConfiguration _configuration;
-        public UserController(AppDbContext context, IConfiguration configuration, UserManager<User> userManager, SignInManager<User> signInManager)
+        public UserController(
+            AppDbContext context,
+            IConfiguration configuration
+            )
         {
             _configuration = configuration;
             _context = context;
-            _userManager = userManager;
-            _signInManager = signInManager;
         }
-
+        //[Authorize]
         [HttpGet("GetAllTicketsByClientId")]
         public async Task<ActionResult<IEnumerable<TicketTransaction>>> GetAllTicketsByClientId([FromQuery] int ClienId)
         {
@@ -202,7 +200,6 @@ namespace LotniskoAPI.Controllers
                 var token = new JwtSecurityToken(
                     issuer: jwtSettings["Issuer"],
                     audience: jwtSettings["Audience"],
-                    claims: claims,
                     expires: DateTime.Now.AddMinutes(int.Parse(jwtSettings["ExpiresInMinutes"])),
                     signingCredentials: credentials
                 );
