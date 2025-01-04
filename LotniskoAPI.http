@@ -1,0 +1,6 @@
+@LotniskoAPI_HostAddress = http://localhost:5100
+
+# GET {{LotniskoAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
