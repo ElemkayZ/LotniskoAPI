@@ -67,8 +67,11 @@ namespace LotniskoAPI.Data
             .HasOne(ps => ps.User)
             .WithMany(ps => ps.UserRoles)
             .HasForeignKey(ps => ps.UserRoleId);
-    
-            modelBuilder.Entity<User>();
+
+            modelBuilder.Entity<User>()
+            .HasMany(f => f.UserRoles)
+            .WithOne(f => f.User)
+            .HasForeignKey(f => f.UserRoleId);
 
             base.OnModelCreating(modelBuilder);
         }

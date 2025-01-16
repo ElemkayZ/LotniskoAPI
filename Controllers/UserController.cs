@@ -71,36 +71,56 @@ namespace LotniskoAPI.Controllers
                 return StatusCode(500, new { Message = "An error occurred while retrieving data.", Details = ex.Message });
             }
         }
-
+        public class CreateUserRequest
+        {
+            public string Name { get; set; }
+            public string Surname { get; set; }
+            public string UserName { get; set; }
+            public string Phone { get; set; }
+            public string Password { get; set; }
+            public string Mail { get; set; }
+        }
         [HttpPost("CreateUser")]
         public async Task<IActionResult> CreateUser(
-            [FromQuery] string _name,
-            [FromQuery] string _surname,
-            [FromQuery] string _username,
-            [FromQuery] string _phone,
-            [FromQuery] string _password,
-            [FromQuery] string _mail
-
+            //[FromQuery] string _name,
+            //[FromQuery] string _surname,
+            //[FromQuery] string _username,
+            //[FromQuery] string _phone,
+            //[FromQuery] string _password,
+            //[FromQuery] string _mail
+            [FromBody] CreateUserRequest request
             )
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                string encryptedPassword = EncryptPassword(_password);
+                //string encryptedPassword = EncryptPassword(_password);
+                string encryptedPassword = EncryptPassword(request.Password);
 
-                var User = new User
+                //var User = new User
+                //{
+                //    Name = _name,
+                //    Surname = _surname,
+                //    UserName = _username,
+                //    Phone = _phone,
+                //    Password = encryptedPassword,
+                //    Mail = _mail
+                //};
+
+                 var User = new User
                 {
-                    Name = _name,
-                    Surname = _surname,
-                    UserName = _username,
-                    Phone = _phone,
+                    Name = request.Name,
+                    Surname = request.Surname,
+                    UserName = request.UserName,
+                    Phone = request.Phone,
                     Password = encryptedPassword,
-                    Mail = _mail
+                    Mail = request.Mail
                 };
 
                 _context.Users.Add(User);
                 await _context.SaveChangesAsync();
-
+                _context.UserRoless.Add(new UserRoles { UserRoleId = User.Id, RoleId = 2 });
+                await _context.SaveChangesAsync();
 
                 await transaction.CommitAsync();
 
@@ -161,7 +181,7 @@ namespace LotniskoAPI.Controllers
         {
             string hashedInputPassword = EncryptPassword(_Password);
 
-            var user = await _context.Users
+            var user = await _context.Users.Include(f => f.UserRoles)
                 .Where(u => u.UserName == _UserName && u.Password == hashedInputPassword)
                 .FirstOrDefaultAsync();
 
@@ -179,13 +199,35 @@ namespace LotniskoAPI.Controllers
                 return Unauthorized(new { Message = "Invalid username or password." });
             }
         }
-
-        [HttpPost("JWTToken")]
-        [AllowAnonymous]
-        public async Task<IActionResult> JWTToken([FromQuery] string _UserName, [FromQuery] string _Password)
+        [HttpGet("GetUserRoles")]
+        public async Task<ActionResult<List<UserRoles>>> GetUserRoles([FromQuery] int userId)
         {
-            var auth = await Authenticate(_UserName, _Password);
-            if (auth is OkObjectResult)
+            try
+            {
+                var roles = await _context.UserRoless
+                .Where(u => u.UserRoleId == userId )
+                .ToListAsync();
+
+                return Ok(roles);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "An error occurred while retrieving data.", Details = ex.Message });
+            }
+        }
+
+
+
+        [HttpGet("JWTToken")]
+        [AllowAnonymous]
+        public async Task<ActionResult<User>> JWTToken([FromQuery] string _UserName, [FromQuery] string _Password)
+        {
+            string hashedInputPassword = EncryptPassword(_Password);
+
+            var user = await _context.Users
+                .Where(u => u.UserName == _UserName && u.Password == hashedInputPassword)
+                .FirstOrDefaultAsync();
+            if (user != null)
             {
                 var jwtSettings = _configuration.GetSection("JwtSettings");
                 var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]));
@@ -205,16 +247,11 @@ namespace LotniskoAPI.Controllers
                 );
                 //return Ok(new { Authorization = token });
                 var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
-                return Ok(new
-                {
-                    token = tokenString,
-                    tokenType = "Bearer",
-                    expiresIn = int.Parse(jwtSettings["ExpiresInMinutes"]) * 60
-                });
+                return Ok(user);
 
             }
 
-            return Unauthorized(new { Message = "Invalid username or password.",auth = auth });
+            return Unauthorized(new { Message = "Invalid username or password." });
         }
 
         [HttpPost("PurchaseTicket")]
