@@ -22,14 +22,10 @@ namespace LotniskoAPI.Controllers
     public class FlightController : ControllerBase
     {
         private readonly AppDbContext _context;
-        private readonly UserManager<User> _userManager;
-        private readonly SignInManager<User> _signInManager;
 
-        public FlightController(AppDbContext context, UserManager<User> userManager, SignInManager<User> signInManager)
+        public FlightController(AppDbContext context)
         {
             _context = context;
-            _userManager = userManager;
-            _signInManager = signInManager;
         }
 
         // Endpoint GET: api/Flight
@@ -38,7 +34,9 @@ namespace LotniskoAPI.Controllers
         {
             try
             {
-                var flights = await _context.Flights.ToListAsync();
+                var flights = await _context.Flights
+                    .Include(f => f.Status)
+                    .ToListAsync();
                 return Ok(flights);
             }
             catch (Exception ex)
@@ -46,6 +44,24 @@ namespace LotniskoAPI.Controllers
                 return StatusCode(500, new { Message = "An error occurred while retrieving data.", Details = ex.Message });
             }
         }
+        // Endpoint wyszukiwania
+       
+
+        [HttpGet("GetAllPlanes")]
+        public async Task<ActionResult<List<Flight>>> GetAllPlanes()
+        {
+            try
+            {
+                var flights = await _context.Planes
+                    .ToListAsync();
+                return Ok(flights);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "An error occurred while retrieving data.", Details = ex.Message });
+            }
+        }
+
         // Endpoint GET: api/FlightAndStatus
         [HttpGet("OneFlightAndStatus")]
         public async Task<ActionResult<FlightAndStatus>> GetFlightAndStatus([FromQuery] int id)
@@ -77,7 +93,7 @@ namespace LotniskoAPI.Controllers
 
         [HttpGet("search")]
         public async Task<ActionResult<IEnumerable<Flight>>>
-            GetAvailableFlightsToWarsaw([FromQuery] string destination, [FromQuery] DateTime dTime)
+            GetAvailableFlightsToWarsaw([FromQuery] string destination, [FromQuery] DateTime dTime, [FromQuery] string rodzajLotu)
         {
             try
             {
@@ -86,7 +102,8 @@ namespace LotniskoAPI.Controllers
                 .Where(f => f.Destination == destination &&
                         f.Status != null &&
                         f.AvailableSeats > 0 &&
-                        f.Status.DepartureTime >= dTime)
+                        f.Status.DepartureTime >= dTime && 
+                        f.Type == rodzajLotu)
                 .OrderBy(f => f.Id)
                 .ToListAsync();
 

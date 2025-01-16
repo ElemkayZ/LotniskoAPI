@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.12.35527.113 d17.12
+VisualStudioVersion = 17.12.35527.113
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LotniskoAPI", "LotniskoAPI.csproj", "{A4BCC5AB-FD61-4FEB-9097-87933C8B9622}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lotnisko", "..\Lotnisko\Lotnisko.csproj", "{5AF6BC11-2812-4E90-A5F0-31574F36BEF3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{A4BCC5AB-FD61-4FEB-9097-87933C8B9622}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A4BCC5AB-FD61-4FEB-9097-87933C8B9622}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A4BCC5AB-FD61-4FEB-9097-87933C8B9622}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5AF6BC11-2812-4E90-A5F0-31574F36BEF3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5AF6BC11-2812-4E90-A5F0-31574F36BEF3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5AF6BC11-2812-4E90-A5F0-31574F36BEF3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5AF6BC11-2812-4E90-A5F0-31574F36BEF3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

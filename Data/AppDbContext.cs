@@ -27,9 +27,9 @@ namespace LotniskoAPI.Data
                 .HasOne(f => f.Status)
                 .WithMany()
                 .HasForeignKey(f => f.StatusId);
-            modelBuilder.Entity<Flight>()
-            .HasOne(f => f.Plane)
-            .WithMany(p => p.Flights)
+            modelBuilder.Entity<Plane>()
+            .HasMany(f => f.Flights)
+            .WithOne(f => f.Plane)
             .HasForeignKey(f => f.CurrentPlaneId);
 
             modelBuilder.Entity<PlaneStaff>()

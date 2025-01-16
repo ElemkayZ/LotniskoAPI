@@ -28,9 +28,23 @@ namespace LotniskoAPI
             builder.Logging.ClearProviders();
             builder.Logging.AddConsole();
 
+            builder.Services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(policy =>
+                {
+                    policy.AllowAnyOrigin()
+                          .AllowAnyMethod()
+                          .AllowAnyHeader();
+                });
+            });
 
-            
+
             builder.Services.AddControllers();
+    //.AddJsonOptions(options =>
+    //{
+    //    options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+    //});
+
 
 
             builder.Services.AddAuthentication(options =>
@@ -92,7 +106,12 @@ namespace LotniskoAPI
     });
             });
 
+
+            
+            // Dodaj CORS do aplikacji
             var app = builder.Build();
+            app.UseCors();
+            app.UseRouting();
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
@@ -100,9 +119,11 @@ namespace LotniskoAPI
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-            app.UseAuthentication();
-            app.UseAuthorization();
             app.UseHttpsRedirection();
+            app.UseAuthentication();
+
+
+            app.UseAuthorization();
 
 
             app.MapControllers();
