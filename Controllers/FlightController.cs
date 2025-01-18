@@ -69,7 +69,7 @@ namespace LotniskoAPI.Controllers
             try
             {
                 var flight = await _context.Flights
-                .FirstOrDefaultAsync(f => f.Id == id);
+                .FirstOrDefaultAsync(xd => xd.Id == id);
 
                 if (flight == null)
                 {
@@ -157,52 +157,64 @@ namespace LotniskoAPI.Controllers
                 return StatusCode(500, new { Message = "An error occurred while retrieving data.", Details = ex.Message });
             }
         }
-
-        [HttpPost("add-flight")]
-        public async Task<IActionResult> AddFlight(
-            [FromQuery] int _CurrentPlaneId,
-            [FromQuery] string _Starting,
-            [FromQuery] string _Destination,
-            [FromQuery] string _Type,
-            [FromQuery] int _Distance,
-            [FromQuery] DateTime _DepartureTime,
-            [FromQuery] DateTime _ArrivalTime,
-            [FromQuery] int _Terminal,
-            [FromQuery] int _Gate,
-            [FromQuery] DateTime _CheckinTime,
-            [FromQuery] int _BaggageCarousel
+        public class AddFlightRequ
+        {
+            public int _Id { get; set; }
+            public string _Starting { get; set; }
+            public string _Destination { get; set; }
+            public string Type { get; set; }
+            public int _Distance { get; set; }
+            public DateTime _DepartureTime { get; set; }
+            public DateTime _ArrivalTime { get; set; }
+            public int _Terminal { get; set; }
+            public int _Gate { get; set; }
+            public DateTime _CheckinTime { get; set; }
+            public int _BaggageCarousel { get; set; }
+        }
+        [HttpPost("addFlight")]
+        public async Task<IActionResult> AddFlight([FromBody] AddFlightRequ _flight
+            //[FromQuery] int _CurrentPlaneId,
+            //[FromQuery] string _Starting,
+            //[FromQuery] string _Destination,
+            //[FromQuery] string _Type,
+            //[FromQuery] int _Distance,
+            //[FromQuery] DateTime _DepartureTime,
+            //[FromQuery] DateTime _ArrivalTime,
+            //[FromQuery] int _Terminal,
+            //[FromQuery] int _Gate,
+            //[FromQuery] DateTime _CheckinTime,
+            //[FromQuery] int _BaggageCarousel
             )
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var _Plane = await _context.Planes.FindAsync(_CurrentPlaneId);
+                var _Plane = await _context.Planes.FindAsync(_flight._Id);
                 if (_Plane is not null)
                 {
                 // Create FlightStatus
                 var flightStatus = new Status
                 {
-                    DepartureTime = _DepartureTime,
-                    ArrivalTime = _ArrivalTime,
-                    Terminal = _Terminal,
-                    Gate = _Gate,
-                    CheckinTime = _CheckinTime,
-                    BaggageCarousel = _BaggageCarousel
+                    DepartureTime =_flight._DepartureTime,
+                    ArrivalTime = _flight._ArrivalTime,
+                    Terminal = _flight._Terminal,
+                    Gate = _flight._Gate,
+                    CheckinTime = _flight._CheckinTime,
+                    BaggageCarousel = _flight._BaggageCarousel
                 };
 
                 _context.FlightStatuses.Add(flightStatus);
                 await _context.SaveChangesAsync();
-
                     // Create Flight
                     var flight = new Flight
                     {
-                        CurrentPlaneId = _CurrentPlaneId,
-                        Starting = _Starting,
-                        Destination = _Destination,
-                        Type = _Type,
+                        CurrentPlaneId = _Plane.Id,
+                        Starting = _flight._Starting,
+                        Destination = _flight._Destination,
+                        Type = _flight.Type,
                         StatusId = flightStatus.Id,
-                        Direction = _Starting == "Wroclaw" ? "Odlot" : "Przylot",
-                        Distance = _Distance,
+                        Direction = _flight._Starting == "Wroclaw" ? "Odlot" : "Przylot",
+                        Distance = _flight._Distance,
                         AvailableSeats = _Plane.Capacity
                     };
 
@@ -301,39 +313,41 @@ namespace LotniskoAPI.Controllers
 
     [HttpPut("updateFlight")]
         public async Task<IActionResult> UpdateFlight(
-            [FromQuery] int id,
-            [FromQuery] int _CurrentPlaneId,
-            [FromQuery] string _Starting,
-            [FromQuery] string _Destination,
-            [FromQuery] string _Type,
-            [FromQuery] int _Distance,
-            [FromQuery] DateTime _DepartureTime,
-            [FromQuery] DateTime _ArrivalTime,
-            [FromQuery] int _Terminal,
-            [FromQuery] int _Gate,
-            [FromQuery] DateTime _CheckinTime,
-            [FromQuery] int _BaggageCarousel)
+            //[FromQuery] int id,
+            //[FromQuery] int _CurrentPlaneId,
+            //[FromQuery] string _Starting,
+            //[FromQuery] string _Destination,
+            //[FromQuery] string _Type,
+            //[FromQuery] int _Distance,
+            //[FromQuery] DateTime _DepartureTime,
+            //[FromQuery] DateTime _ArrivalTime,
+            //[FromQuery] int _Terminal,
+            //[FromQuery] int _Gate,
+            //[FromQuery] DateTime _CheckinTime,
+            //[FromQuery] int _BaggageCarousel
+            [FromBody] Flight _filght
+            )
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var _Plane = await _context.Planes.FindAsync(_CurrentPlaneId);
+                var _Plane = await _context.Planes.FindAsync(_filght.CurrentPlaneId);
                 if (_Plane is not null)
                 {
                     // Update Flight
-                    var flight = await _context.Flights.FindAsync(id);
+                    var flight = await _context.Flights.FindAsync(_filght.Id);
                     if (flight == null)
                     {
                         return NotFound(new { Message = "Flight not found." });
                     }
                     {
-                        flight.CurrentPlaneId = _CurrentPlaneId;
-                        flight.Starting = _Starting;
-                        flight.Destination = _Destination;
-                        flight.Type = _Type;
-                        flight.Direction = _Starting == "Wroclaw" ? "Odlot" : "Przylot";
-                        flight.Distance = _Distance;
-                        flight.AvailableSeats = 69;
+                        flight.CurrentPlaneId = _filght.CurrentPlaneId;
+                        flight.Starting = _filght.Starting;
+                        flight.Destination = _filght.Destination;
+                        flight.Type = _filght.Type;
+                        flight.Direction = _filght.Starting == "Wroclaw" ? "Odlot" : "Przylot";
+                        flight.Distance = _filght.Distance;
+                        flight.AvailableSeats = _Plane.Capacity;
                     };
                     await _context.SaveChangesAsync();
 
@@ -344,12 +358,12 @@ namespace LotniskoAPI.Controllers
                         return NotFound(new { Message = "Flight status not found." });
                     }
                     {
-                        flightStatus.DepartureTime = _DepartureTime;
-                        flightStatus.ArrivalTime = _ArrivalTime;
-                        flightStatus.Terminal = _Terminal;
-                        flightStatus.Gate = _Gate;
-                        flightStatus.CheckinTime = _CheckinTime;
-                        flightStatus.BaggageCarousel = _BaggageCarousel;
+                        flightStatus.DepartureTime = _filght.Status.DepartureTime;
+                        flightStatus.ArrivalTime = _filght.Status.ArrivalTime;
+                        flightStatus.Terminal = _filght.Status.Terminal;
+                        flightStatus.Gate = _filght.Status.Gate;
+                        flightStatus.CheckinTime = _filght.Status.CheckinTime;
+                        flightStatus.BaggageCarousel = _filght.Status.BaggageCarousel;
                     };
 
                     await _context.SaveChangesAsync();

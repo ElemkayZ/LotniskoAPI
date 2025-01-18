@@ -41,6 +41,7 @@ namespace LotniskoAPI.Controllers
             try
             {
                 var Tickets = await _context.Tickets
+                    .Include(f => f.TicketTransaction)
                     .Where(tt => tt.UserId == ClienId)
                     .ToListAsync();
                 return Ok(Tickets);
@@ -82,30 +83,18 @@ namespace LotniskoAPI.Controllers
         }
         [HttpPost("CreateUser")]
         public async Task<IActionResult> CreateUser(
-            //[FromQuery] string _name,
-            //[FromQuery] string _surname,
-            //[FromQuery] string _username,
-            //[FromQuery] string _phone,
-            //[FromQuery] string _password,
-            //[FromQuery] string _mail
+
             [FromBody] CreateUserRequest request
             )
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                //string encryptedPassword = EncryptPassword(_password);
                 string encryptedPassword = EncryptPassword(request.Password);
-
-                //var User = new User
-                //{
-                //    Name = _name,
-                //    Surname = _surname,
-                //    UserName = _username,
-                //    Phone = _phone,
-                //    Password = encryptedPassword,
-                //    Mail = _mail
-                //};
+                if(await _context.Users.FirstOrDefaultAsync(f => f.UserName == request.UserName) != null)
+                {
+                    throw new Exception("istnieje już user");
+                }
 
                  var User = new User
                 {
@@ -147,21 +136,25 @@ namespace LotniskoAPI.Controllers
             }
         }
 
-        [HttpPost("UpdatePassword")]
-        public async Task<IActionResult> UpdatePassword([FromQuery] string _password, [FromQuery] int _userId)
+        [HttpPut("UpdateUser")]
+        public async Task<IActionResult> UpdateUser([FromBody]User _user)
         {
             try
             {
                 var user = await _context.Users
-                    .FirstOrDefaultAsync(u => u.Id == _userId);
+                    .FirstOrDefaultAsync(u => u.Id == _user.Id);
 
                 if (user == null)
                 {
                     return NotFound(new { Message = "User not found." });
                 }
 
-                string encryptedPassword = EncryptPassword(_password);
-
+                string encryptedPassword = EncryptPassword(_user.Password);
+                user.Name = _user.Name;
+                user.Surname = _user.Surname;
+                user.Phone = _user.Phone;
+                user.UserName = _user.UserName;
+                user.Mail = _user.Mail;
                 user.Password = encryptedPassword;
                 
                 _context.Users.Update(user);
@@ -256,20 +249,15 @@ namespace LotniskoAPI.Controllers
 
         [HttpPost("PurchaseTicket")]
         public async Task<IActionResult> PurchaseTicket(
-            [FromQuery] int _OrderFlightId,
-            [FromQuery] int _Amount,
-            [FromQuery] bool _Insurance,
-            [FromQuery] int _SeatingType,
-            [FromQuery] string _CardDetail,
-            [FromQuery] int SeatingNumber,
-            [FromQuery] int _ClientId
+            
+            [FromBody] Ticket _ticket
             )
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
             {
-                var flight = await _context.Flights.FirstOrDefaultAsync(f => f.Id == _OrderFlightId);
+                var flight = await _context.Flights.FirstOrDefaultAsync(f => f.Id == _ticket.OrderFlightId);
                 if (flight == null || flight.AvailableSeats <= 0)
                 {
                     return BadRequest(new { Message = "Flight not found or no available seats." });
@@ -281,9 +269,9 @@ namespace LotniskoAPI.Controllers
 
                 var ticketTransaction = new TicketTransaction
                 {
-                    Amount = _Amount,
-                    TransactionUserId = _ClientId,
-                    CardDetail = _CardDetail,
+                    Amount = _ticket.TicketTransaction.Amount,
+                    TransactionUserId = _ticket.UserId,
+                    CardDetail = _ticket.TicketTransaction.CardDetail,
                     Status = "Completed",
                     Date = DateTime.Now
                 };
@@ -294,13 +282,13 @@ namespace LotniskoAPI.Controllers
 
                 var ticket = new Ticket
                 {
-                    UserId = _ClientId,
-                    OrderFlightId = _OrderFlightId,
+                    UserId = _ticket.UserId,
+                    OrderFlightId = _ticket.OrderFlightId,
                     OrderDate = DateTime.Now,
-                    Insurence = _Insurance,
+                    Insurence = _ticket.Insurence,
                     TransactionId = transactionId,
-                    SeatingType = _SeatingType,
-                    SeatingNumber = _SeatingType
+                    SeatingType = _ticket.SeatingType,
+                    SeatingNumber = _ticket.SeatingType
                 };
                 _context.Tickets.Add(ticket);
                 await _context.SaveChangesAsync();
@@ -313,6 +301,49 @@ namespace LotniskoAPI.Controllers
             {
                 await transaction.RollbackAsync();
                 return StatusCode(500, new { Message = "An error occurred.", Details = ex.Message});
+            }
+        }
+
+        [HttpPost("AddRoleToUser")]
+        public async Task<IActionResult> AddRoleToUser([FromBody] UserRoles _userRoles)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(f => f.Id == _userRoles.UserRoleId);
+            if (user != null)
+            {
+
+            var role = new UserRoles
+            {
+                UserRoleId = _userRoles.UserRoleId,
+                RoleId = _userRoles.RoleId
+            };
+  
+                _context.UserRoless.Add(role);
+                await _context.SaveChangesAsync();
+
+                return Ok(new
+                {
+                    Message = "Authentication successful.",
+                });
+            }
+            else
+            {
+                return Unauthorized(new { Message = "Invalid username or password." });
+            }
+        }
+
+        [HttpGet("AllUsers")]
+        public async Task<ActionResult<IEnumerable<User>>> AllUsers()
+        {
+            try
+            {
+                var users = await _context.Users
+                    .OrderBy(f => f.Id)
+                    .ToListAsync();
+                return Ok(users);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "An error occurred while retrieving data.", Details = ex.Message });
             }
         }
     }
